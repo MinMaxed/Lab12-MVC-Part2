@@ -12,16 +12,40 @@ namespace MVCpt2.Controllers
     public class MoviesController : Controller
     {
         private readonly MVCpt2Context _context;
-
+        //connect model & view pages with the DB's content, contains CRUD elements
         public MoviesController(MVCpt2Context context)
         {
             _context = context;
         }
 
-        // GET: Movies
-        public async Task<IActionResult> Index()
+        // GET: Movies, async call to the database to compare search to movie titles. can be adjusted to id
+        //using Rename, now allows for search of genre as well
+        public async Task<IActionResult> Index(string movieGenre, string searchString)
         {
-            return View(await _context.Movie.ToListAsync());
+
+            IQueryable<string> genreQuery = from m in _context.Movie
+                                            orderby m.Genre
+                                            select m.Genre;
+
+
+            var movies = from m in _context.Movie
+                         select m;
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                movies = movies.Where(s => s.Title.Contains(searchString));
+            }
+
+            if (!String.IsNullOrEmpty(movieGenre))
+            {
+                movies = movies.Where(x => x.Genre == movieGenre);
+            }
+
+            var movieGenreVM = new MovieGenreViewModel();
+            movieGenreVM.genres = new SelectList(await genreQuery.Distinct().ToListAsync());
+            movieGenreVM.movies = await movies.ToListAsync();
+
+            return View(movieGenreVM);
         }
 
         // GET: Movies/Details/5
@@ -53,7 +77,7 @@ namespace MVCpt2.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Create([Bind("ID,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
             if (ModelState.IsValid)
             {
@@ -85,7 +109,7 @@ namespace MVCpt2.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,Title,ReleaseDate,Genre,Price")] Movie movie)
+        public async Task<IActionResult> Edit(int id, [Bind("ID,Title,ReleaseDate,Genre,Price,Rating")] Movie movie)
         {
             if (id != movie.ID)
             {
@@ -129,8 +153,13 @@ namespace MVCpt2.Controllers
             {
                 return NotFound();
             }
-
             return View(movie);
+        }
+
+        [HttpPost]
+        public string Index(string searchString, bool notUsed)
+        {
+            return "From [HttPost]Index: filter on " + searchString;
         }
 
         // POST: Movies/Delete/5

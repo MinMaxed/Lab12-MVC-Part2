@@ -35,7 +35,7 @@ namespace MVCpt2
 
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
+            //sets up the database of the movies
             services.AddDbContext<MVCpt2Context>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("MVCpt2Context")));
         }
@@ -54,6 +54,8 @@ namespace MVCpt2
             }
 
             app.UseHttpsRedirection();
+
+            //allows for the use of css
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
